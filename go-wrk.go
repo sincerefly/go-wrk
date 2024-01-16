@@ -3,11 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/tsliwowicz/go-wrk/loader"
@@ -16,7 +15,7 @@ import (
 
 const APP_VERSION = "0.9"
 
-//default that can be overridden from the command line
+// default that can be overridden from the command line
 var versionFlag bool = false
 var helpFlag bool = false
 var duration int = 10 //seconds
@@ -60,7 +59,7 @@ func init() {
 	flag.BoolVar(&http2, "http", true, "Use HTTP/2")
 }
 
-//printDefaults a nicer format for the defaults
+// printDefaults a nicer format for the defaults
 func printDefaults() {
 	fmt.Println("Usage: go-wrk <options> <url>")
 	fmt.Println("Options:")
@@ -79,13 +78,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt)
 
 	flag.Parse() // Scan the arguments list
-	header = make(map[string]string)
-	if headerFlags != nil {
-		for _, hdr := range headerFlags {
-			hp := strings.SplitN(hdr, ":", 2)
-			header[hp[0]] = hp[1]
-		}
-	}
+	header = headerFlags.StringMap()
 
 	if playbackFile != "<empty>" {
 		file, err := os.Open(playbackFile) // For read access.
@@ -94,7 +87,7 @@ func main() {
 			os.Exit(1)
 		}
 		defer file.Close()
-		url, err := ioutil.ReadAll(file)
+		url, err := io.ReadAll(file)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -116,7 +109,7 @@ func main() {
 
 	if len(reqBody) > 0 && reqBody[0] == '@' {
 		bodyFilename := reqBody[1:]
-		data, err := ioutil.ReadFile(bodyFilename)
+		data, err := os.ReadFile(bodyFilename)
 		if err != nil {
 			fmt.Println(fmt.Errorf("could not read file %q: %v", bodyFilename, err))
 			os.Exit(1)
@@ -144,14 +137,14 @@ func main() {
 			aggStats.NumRequests += stats.NumRequests
 			aggStats.TotRespSize += stats.TotRespSize
 			aggStats.TotDuration += stats.TotDuration
-			aggStats.MaxRequestTime = util.MaxDuration(aggStats.MaxRequestTime, stats.MaxRequestTime)
-			aggStats.MinRequestTime = util.MinDuration(aggStats.MinRequestTime, stats.MinRequestTime)
+			aggStats.MaxRequestTime = max(aggStats.MaxRequestTime, stats.MaxRequestTime)
+			aggStats.MinRequestTime = min(aggStats.MinRequestTime, stats.MinRequestTime)
 			responders++
 		}
 	}
 
 	if aggStats.NumRequests == 0 {
-		fmt.Println("Error: No statistics collected / no requests found\n")
+		fmt.Printf("Error: No statistics collected / no requests found\n")
 		return
 	}
 

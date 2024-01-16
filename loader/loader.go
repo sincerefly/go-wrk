@@ -167,7 +167,7 @@ func DoRequest(httpClient *http.Client, header map[string]string, method, host, 
 	return
 }
 
-// Requester a go function for repeatedly making requests and aggregating statistics as long as required
+// RunSingleLoadSession Requester a go function for repeatedly making requests and aggregating statistics as long as required
 // When it is done, it sends the results using the statsAggregator channel
 func (cfg *LoadCfg) RunSingleLoadSession() {
 	stats := &RequesterStats{MinRequestTime: time.Minute}
@@ -184,8 +184,8 @@ func (cfg *LoadCfg) RunSingleLoadSession() {
 		if respSize > 0 {
 			stats.TotRespSize += int64(respSize)
 			stats.TotDuration += reqDur
-			stats.MaxRequestTime = util.MaxDuration(reqDur, stats.MaxRequestTime)
-			stats.MinRequestTime = util.MinDuration(reqDur, stats.MinRequestTime)
+			stats.MaxRequestTime = max(reqDur, stats.MaxRequestTime)
+			stats.MinRequestTime = min(reqDur, stats.MinRequestTime)
 			stats.NumRequests++
 		} else {
 			stats.NumErrs++

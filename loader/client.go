@@ -3,14 +3,14 @@ package loader
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"fmt"
 
+	"github.com/tsliwowicz/go-wrk/util"
 	"golang.org/x/net/http2"
 	"time"
-	"github.com/tsliwowicz/go-wrk/util"
 )
 
 func client(disableCompression, disableKeepAlive, skipVerify bool, timeoutms int, allowRedirects bool, clientCert, clientKey, caCert string, usehttp2 bool) (*http.Client, error) {
@@ -48,7 +48,7 @@ func client(disableCompression, disableKeepAlive, skipVerify bool, timeoutms int
 	}
 
 	// Load our CA certificate
-	clientCACert, err := ioutil.ReadFile(caCert)
+	clientCACert, err := os.ReadFile(caCert)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to open cert %v", err)
 	}
@@ -68,7 +68,7 @@ func client(disableCompression, disableKeepAlive, skipVerify bool, timeoutms int
 	}
 
 	if usehttp2 {
-		http2.ConfigureTransport(t)
+		_ = http2.ConfigureTransport(t)
 	}
 	client.Transport = t
 	return client, nil
